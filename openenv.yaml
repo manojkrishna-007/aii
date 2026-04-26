@@ -1,0 +1,13 @@
+name: boardroom-ai
+version: 1.0
+
+env:
+  entry: app:app
+
+endpoints:
+  - /reset
+  - /step
+  - /state
+
+reward_range: [0.0, 1.0]
+deterministic: true
