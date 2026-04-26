@@ -1,13 +1,33 @@
-import matplotlib.pyplot as plt
+from env import BoardroomEnv
 
-baseline = [0.5 + i*0.01 for i in range(50)]
-trained = [0.6 + i*0.02 for i in range(50)]
+env = BoardroomEnv()
 
-plt.plot(baseline, label="baseline")
-plt.plot(trained, label="trained")
+def run(mode):
 
-plt.xlabel("Episodes")
-plt.ylabel("Reward")
-plt.legend()
+    total_reward = 0
 
-plt.savefig("training_curve.png")
+    for i in range(5):
+
+        obs = env.reset("hard")
+        env.set_task("Global expansion under risk")
+
+        done = False
+
+        while not done:
+
+            obs, reward, done, _ = env.step({
+                "agent": "CEO",
+                "message": "Expand cautiously"
+            })
+
+            total_reward += reward.value
+
+    return total_reward / 5
+
+
+before = run("before")
+after = run("after")
+
+print("\nBEFORE TRAINING SCORE:", before)
+print("AFTER TRAINING SCORE:", after)
+print("IMPROVEMENT:", after - before)

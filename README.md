@@ -1,23 +1,11 @@
-Problem
-
-Multi-agent corporate decision simulation under constraints
-
-Innovation
-emergent consensus RL
-personality-driven LLM agents
-time-penalized negotiation
-Observations
-
-Conversation + constraints + step count
-
-Actions
-
-Agent utterances
-
-Reward
-
-Consensus + time pressure + risk penalty
-
-Results
-faster convergence after training
-improved decision quality
+---
+title: BoardroomAI
+emoji: 🧠
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+sdk_version: latest
+python_version: "3.11"
+app_file: app.py
+pinned: false
+---

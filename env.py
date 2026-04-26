@@ -15,48 +15,94 @@ class BoardroomEnv:
             "step_count": 0,
             "budget": cfg["budget"],
             "risk": cfg["risk"],
-            "memory": {"successful": [], "failed": []},
-            "coalitions": {"growth": [], "risk": [], "tech": []},
-            "power": {"CEO": 1.5, "CFO": 1.2, "CTO": 1.0, "Investor": 1.3}
+            "memory": {
+                "successful": [],
+                "failed": []
+            },
+            "coalitions": {
+                "growth": [],
+                "risk": [],
+                "tech": []
+            },
+            "power": {
+                "CEO": 1.5,
+                "CFO": 1.2,
+                "CTO": 1.0,
+                "Investor": 1.3
+            }
         }
+
+        # 🧠 CONSENSUS TIME TRACKING
+        self.consensus_start_step = 0
+        self.consensus_time_log = []
 
         return Observation(**self.state)
 
-    def set_task(self, task):
+    def set_task(self, task: str):
         self.state["task"] = task
 
     def step(self, action: Action):
 
+        # log external action
         self.state["history"].append(action.dict())
 
-        agent = ["CEO","CFO","CTO","Investor"][self.state["step_count"] % 4]
+        # rotate agents
+        agent = ["CEO", "CFO", "CTO", "Investor"][self.state["step_count"] % 4]
 
+        # LLM response
         msg = call_llm(agent, self.state["task"])
 
-        self.state["history"].append({"agent": agent, "message": msg})
+        self.state["history"].append({
+            "agent": agent,
+            "message": msg
+        })
 
+        # coalition updates
         if "risk" in msg:
             self.state["coalitions"]["risk"].append(agent)
+
         if "growth" in msg:
             self.state["coalitions"]["growth"].append(agent)
+
         if "tech" in msg:
             self.state["coalitions"]["tech"].append(agent)
 
+        # consensus check
         consensus = compute_consensus(self.state["history"])
 
-        reward_val = compute_reward(self.state, consensus, self.state["step_count"])
+        # 🧠 TIME-TO-CONSENSUS METRIC
+        time_to_consensus = None
+        if consensus:
+            time_to_consensus = self.state["step_count"] - self.consensus_start_step
+            self.consensus_time_log.append(time_to_consensus)
 
+        # reward computation
+        reward_val = compute_reward(
+            self.state,
+            consensus,
+            self.state["step_count"]
+        )
+
+        # memory update (learning signal support)
         if reward_val < 0.5:
             self.state["memory"]["failed"].append(action.message)
         else:
             self.state["memory"]["successful"].append(action.message)
 
+        # step update
         self.state["step_count"] += 1
 
+        # termination condition
         done = consensus or self.state["step_count"] >= 12
 
         return Observation(**self.state), Reward(
             value=reward_val,
             done=done,
-            info={"consensus": consensus}
+            info={
+                "consensus": consensus,
+                "time_to_consensus": time_to_consensus
+            }
         ), done, {}
+
+    def state(self):
+        return self.state
